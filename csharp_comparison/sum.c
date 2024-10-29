@@ -6,7 +6,6 @@
 #include <tmmintrin.h>
 #include <immintrin.h>
 
-
 typedef unsigned int u32;
 
 #define NUM_RUNS 100  // Number of times to run each test to find the minimum cycle count

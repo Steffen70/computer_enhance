@@ -2,7 +2,7 @@ import time
 import numpy
 
 # Assumed CPU frequency in cycles per second
-CPU_FREQUENCY_HZ = 4_480_000_000  # 4.4 GHz for All-Core Turbo
+CPU_FREQUENCY_HZ = 4_400_000_000  # 4.4 GHz for All-Core Turbo
 NUM_RUNS = 100  # Number of times to run each test
 
 def SingleScalar(count, input_data):
