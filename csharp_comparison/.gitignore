@@ -1,4 +1,7 @@
+# C build artifacts
 sum
+
+# C# build artifacts and JetBrains Rider files
+.idea/
 bin/
 obj/
-.idea
