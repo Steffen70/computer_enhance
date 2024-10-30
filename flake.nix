@@ -1,5 +1,5 @@
 {
-  description = "A environment for working with Python and C";
+  description = "A environment for working with Python, C and C#";
 
   inputs = {
     nixpkgs.url = "github:nixos/nixpkgs?ref=nixos-unstable";

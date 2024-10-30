@@ -8,6 +8,9 @@
 
 #define NUM_RUNS 100  // Number of times to run each test to find the minimum cycle count
 
+// You can compile this code using the following command:
+// gcc -O0 -Wno-cpp -o sum sum.c
+
 // Function to perform addition using uint64_t
 uint64_t SingleScalar(uint64_t count, uint64_t* input_data) {
     uint64_t total_sum = 0;
