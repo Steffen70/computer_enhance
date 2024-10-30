@@ -24,6 +24,7 @@
             myPython
             unstable.gcc
             unstable.glibc
+            unstable.dotnet-sdk_8
           ];
         };
       }

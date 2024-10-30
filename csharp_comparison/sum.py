@@ -3,7 +3,7 @@ import numpy
 
 # Assumed CPU frequency in cycles per second
 CPU_FREQUENCY_HZ = 4_400_000_000  # 4.4 GHz for All-Core Turbo
-NUM_RUNS = 100  # Number of times to run each test
+NUM_RUNS = 2  # Number of times to run each test
 
 def SingleScalar(count, input_data):
     total_sum = 0
@@ -52,7 +52,7 @@ def run_test(func, sizes):
     print("=" * 100)
 
 if __name__ == "__main__":
-    test_sizes = [5000]
+    test_sizes = [5000, 20000, 312500, 6000000, 25000000]
     run_test(SingleScalar, test_sizes)
     run_test(SingleScalarNoRange, test_sizes)
     run_test(NumpySum, test_sizes)

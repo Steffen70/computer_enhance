@@ -6,44 +6,31 @@
 #include <tmmintrin.h>
 #include <immintrin.h>
 
-typedef unsigned int u32;
-
 #define NUM_RUNS 100  // Number of times to run each test to find the minimum cycle count
 
-// Function prototypes
-u32 SingleScalar(u32 count, u32* input_data);
-u32 Unroll2Scalar(u32 count, u32* input_data);
-u32 Unroll4Scalar(u32 count, u32* input_data);
-u32 Simd128(u32 count, u32* input_data);
-u32 Simd256(u32 count, u32* input_data);
-
-uint64_t measure_cycles(u32 (*func)(u32, u32*), u32* input_data, u32 size, double* cpu_clock);
-
-void run_test(const char* func_name, u32 (*func)(u32, u32*), u32* sizes, int num_sizes);
-
-// Function to perform addition using u32
-u32 SingleScalar(u32 count, u32* input_data) {
-    u32 total_sum = 0;
-    for (u32 i = 0; i < count; i++) {
+// Function to perform addition using uint64_t
+uint64_t SingleScalar(uint64_t count, uint64_t* input_data) {
+    uint64_t total_sum = 0;
+    for (uint64_t i = 0; i < count; i++) {
         total_sum += input_data[i];
     }
     return total_sum;
 }
 
-// Function to perform addition using u32 with loop unrolling by 2
-u32 Unroll2Scalar(u32 count, u32* input_data) {
-    u32 total_sum = 0;
-    for (u32 i = 0; i < count; i += 2) {
+// Function to perform addition using uint64_t with loop unrolling by 2
+uint64_t Unroll2Scalar(uint64_t count, uint64_t* input_data) {
+    uint64_t total_sum = 0;
+    for (uint64_t i = 0; i < count; i += 2) {
         total_sum += input_data[i];
         total_sum += input_data[i + 1];
     }
     return total_sum;
 }
 
-// Function to perform addition using u32 with loop unrolling by 4
-u32 Unroll4Scalar(u32 count, u32* input_data) {
-    u32 total_sum = 0;
-    for (u32 i = 0; i < count; i += 4) {
+// Function to perform addition using uint64_t with loop unrolling by 4
+uint64_t Unroll4Scalar(uint64_t count, uint64_t* input_data) {
+    uint64_t total_sum = 0;
+    for (uint64_t i = 0; i < count; i += 4) {
         total_sum += input_data[i];
         total_sum += input_data[i + 1];
         total_sum += input_data[i + 2];
@@ -52,43 +39,44 @@ u32 Unroll4Scalar(u32 count, u32* input_data) {
     return total_sum;
 }
 
-// Function to perform si128 addition using SIMD
-u32 __attribute__((target("ssse3"))) Simd128(u32 count, u32* input_data) {
+// Function to perform addition using SIMD with SSE2 for 64-bit integers
+uint64_t __attribute__((target("sse2"))) Simd128(uint64_t count, uint64_t* input_data) {
     __m128i total_sum = _mm_setzero_si128();
-    u32 i;
-    for (i = 0; i + 4 <= count; i += 4) {
+    uint64_t i;
+    for (i = 0; i + 2 <= count; i += 2) {
         __m128i data = _mm_loadu_si128((__m128i*)&input_data[i]);
-        total_sum = _mm_add_epi32(total_sum, data);
+        total_sum = _mm_add_epi64(total_sum, data);
     }
-    total_sum = _mm_hadd_epi32(total_sum, total_sum);
-    total_sum = _mm_hadd_epi32(total_sum, total_sum);
-    u32 result = _mm_cvtsi128_si32(total_sum);
+    uint64_t result[2];
+    _mm_storeu_si128((__m128i*)result, total_sum);
+    uint64_t final_sum = result[0] + result[1];
+
     for (; i < count; i++) {
-        result += input_data[i];
+        final_sum += input_data[i];
     }
-    return result;
+    return final_sum;
 }
 
-// Function to perform si256 addition using AVX2
-u32 __attribute__((target("avx2"))) Simd256(u32 count, u32* input_data) {
+// Function to perform addition using SIMD with AVX2 for 64-bit integers
+uint64_t __attribute__((target("avx2"))) Simd256(uint64_t count, uint64_t* input_data) {
     __m256i total_sum = _mm256_setzero_si256();
-    u32 i;
-    for (i = 0; i + 8 <= count; i += 8) {
+    uint64_t i;
+    for (i = 0; i + 4 <= count; i += 4) {
         __m256i data = _mm256_loadu_si256((__m256i*)&input_data[i]);
-        total_sum = _mm256_add_epi32(total_sum, data);
+        total_sum = _mm256_add_epi64(total_sum, data);
     }
-    __m128i sum128 = _mm_add_epi32(_mm256_castsi256_si128(total_sum), _mm256_extracti128_si256(total_sum, 1));
-    sum128 = _mm_hadd_epi32(sum128, sum128);
-    sum128 = _mm_hadd_epi32(sum128, sum128);
-    u32 result = _mm_cvtsi128_si32(sum128);
+    uint64_t result[4];
+    _mm256_storeu_si256((__m256i*)result, total_sum);
+    uint64_t final_sum = result[0] + result[1] + result[2] + result[3];
+
     for (; i < count; i++) {
-        result += input_data[i];
+        final_sum += input_data[i];
     }
-    return result;
+    return final_sum;
 }
 
 // Function to measure CPU cycles and calculate the CPU clock speed
-uint64_t measure_cycles(u32 (*func)(u32, u32*), u32* input_data, u32 size, double* cpu_clock) {
+uint64_t measure_cycles(uint64_t (*func)(uint64_t, uint64_t*), uint64_t* input_data, uint64_t size, double* cpu_clock) {
     uint64_t min_cycles = UINT64_MAX;
     struct timespec start_time, end_time;
 
@@ -117,30 +105,30 @@ uint64_t measure_cycles(u32 (*func)(u32, u32*), u32* input_data, u32 size, doubl
     return min_cycles;
 }
 
-void run_test(const char* func_name, u32 (*func)(u32, u32*), u32* sizes, int num_sizes) {
+void run_test(const char* func_name, uint64_t (*func)(uint64_t, uint64_t*), uint64_t* sizes, int num_sizes) {
     printf("\nRunning tests for function: %s\n", func_name);
     printf("=======================================================================================================\n");
     printf("%-20s%-25s%-20s%-20s%-15s\n", "Test Size", "Result", "CPU Cycles", "CPU Clock (GHz)", "Adds per Cycle");
     printf("-------------------------------------------------------------------------------------------------------\n");
 
     for (int i = 0; i < num_sizes; i++) {
-        u32 size = sizes[i];
-        u32* input_data = malloc(size * sizeof(u32));
+        uint64_t size = sizes[i];
+        uint64_t* input_data = malloc(size * sizeof(uint64_t));
         if (input_data == NULL) {
-            fprintf(stderr, "Error: Memory allocation failed for size %u\n", size);
+            fprintf(stderr, "Error: Memory allocation failed for size %" PRIu64 "\n", size);
             exit(EXIT_FAILURE);
         }
 
-        for (u32 j = 0; j < size; j++) {
+        for (uint64_t j = 0; j < size; j++) {
             input_data[j] = j;
         }
 
         double cpu_clock = 0;
         uint64_t cycles = measure_cycles(func, input_data, size, &cpu_clock);
         double adds_per_cycle = (double)size / cycles;
-        u32 result = func(size, input_data);
+        uint64_t result = func(size, input_data);
 
-        printf("%-20u%-25u%-20" PRIu64 "%-20.3f%-15.6f\n", size, result, cycles, cpu_clock / 1e9, adds_per_cycle);
+        printf("%-20" PRIu64 "%-25" PRIu64 "%-20" PRIu64 "%-20.3f%-15.6f\n", size, result, cycles, cpu_clock / 1e9, adds_per_cycle);
         free(input_data);
     }
 
@@ -148,7 +136,7 @@ void run_test(const char* func_name, u32 (*func)(u32, u32*), u32* sizes, int num
 }
 
 int main() {
-    u32 test_sizes[] = {5000};
+    uint64_t test_sizes[] = {5000, 20000, 312500, 6000000, 25000000};
     int num_sizes = sizeof(test_sizes) / sizeof(test_sizes[0]);
 
     run_test("SingleScalar", SingleScalar, test_sizes, num_sizes);
