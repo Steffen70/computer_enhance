@@ -91,6 +91,7 @@ internal static class Program
             {
                 lock (lockObj)
                 {
+                    // ReSharper disable once AccessToModifiedClosure
                     totalSum += localSum;
                 }
             });
@@ -106,10 +107,10 @@ internal static class Program
     private static unsafe ulong Simd256(ulong count, ulong[] inputData)
     {
         var totalSum = Vector256<ulong>.Zero;
-        ulong i;
 
         fixed (ulong* dataPtr = inputData)
         {
+            ulong i;
             for (i = 0; i + 4 <= count; i += 4)
             {
                 var data = Avx.LoadVector256(dataPtr + i);
@@ -239,14 +240,14 @@ internal static class Program
 
     private static void Main()
     {
-        ulong[] testSizes = { 5000, 20000, 312500, 6000000, 25000000 };
+        ulong[] testSizes = [5000, 20000, 312500, 6000000, 25000000];
 
         RunTest("SingleScalar", SingleScalar, testSizes);
-        // RunTest("LinqSum", LinqSum, testSizes);
-        // RunTest("LinqAggregate", LinqAggregate, testSizes);
-        // RunTest("Unroll2Scalar", Unroll2Scalar, testSizes);
-        // RunTest("Unroll4Scalar", Unroll4Scalar, testSizes);
-        // RunTest("ParallelSingleScalar", ParallelSingleScalar, testSizes);
+        RunTest("LinqSum", LinqSum, testSizes);
+        RunTest("LinqAggregate", LinqAggregate, testSizes);
+        RunTest("Unroll2Scalar", Unroll2Scalar, testSizes);
+        RunTest("Unroll4Scalar", Unroll4Scalar, testSizes);
+        RunTest("ParallelSingleScalar", ParallelSingleScalar, testSizes);
         RunTest("ParallelUnroll4Scalar", ParallelUnroll4Scalar, testSizes);
         RunTest("Simd256", Simd256, testSizes);
         RunTest("ParallelUnroll4Simd256", ParallelUnroll4Simd256, testSizes);
